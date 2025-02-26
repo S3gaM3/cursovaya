@@ -33,20 +33,30 @@ exports.register = async (req, res) => {
 // Вход
 exports.login = async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ message: "Введите email и пароль" });
 
   try {
     const [users] = await db.query("SELECT * FROM Users WHERE email = ?", [email]);
-    if (!users.length) return res.status(404).json({ message: "Пользователь не найден" });
+    if (!users.length) return res.status(401).json({ message: "Неверные учетные данные" });
 
     const user = users[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Неверные учетные данные" });
 
-    const token = generateToken(user);
-    res.status(200).json({ message: "Вход выполнен", token });
+    // Проверяем наличие JWT_SECRET перед генерацией токена
+    if (!process.env.JWT_SECRET) {
+      console.error("❌ Ошибка: JWT_SECRET не установлен в .env");
+      return res.status(500).json({ message: "Ошибка сервера: отсутствует JWT_SECRET" });
+    }
+
+    // Генерируем токен
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET, // ✅ Теперь секретный ключ передается корректно
+      { expiresIn: "24h" }
+    );
+
+    res.json({ message: "Успешный вход", token });
   } catch (err) {
-    res.status(500).json({ message: "Ошибка базы данных", error: err.message });
+    console.error("Ошибка авторизации:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
   }
 };
 

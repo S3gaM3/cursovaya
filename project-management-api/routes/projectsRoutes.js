@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const projectsController = require("../controllers/projectsController");
-const verifyToken = require("../middleware/authMiddleware");
+
 
 // Проверяем, что контроллер загружен
 if (!projectsController) {
@@ -11,7 +11,7 @@ if (!projectsController.updateProject) {
   throw new Error("❌ Ошибка: projectsController.updateProject не найден!");
 }
 // Получить статистику по задачам в проектах
-router.get("/tasks/status", verifyToken, async (req, res) => {
+router.get("/tasks/status", async (req, res) => {
   try {
     const [tasks] = await db.query(`
       SELECT
@@ -26,11 +26,11 @@ router.get("/tasks/status", verifyToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// CRUD маршруты
-router.get("/", verifyToken, projectsController.getProjects);
-router.get("/:id", verifyToken, projectsController.getProjectById);
-router.post("/", verifyToken, projectsController.createProject);
-router.put("/:id", verifyToken, projectsController.updateProject);
-router.delete("/:id", verifyToken, projectsController.deleteProject);
+// CRUD маршруты (убрана проверка токена для GET-запросов)
+router.get("/", projectsController.getProjects);
+router.get("/:id", projectsController.getProjectById);
+router.post("/", projectsController.createProject);
+router.put("/:id", projectsController.updateProject);
+router.delete("/:id", projectsController.deleteProject);
 
 module.exports = router;

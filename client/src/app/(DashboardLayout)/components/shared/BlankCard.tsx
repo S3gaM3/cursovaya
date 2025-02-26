@@ -1,4 +1,5 @@
 import { Card } from "@mui/material";
+import React from 'react';
 
 type Props = {
   className?: string;

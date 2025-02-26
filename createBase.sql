@@ -3,7 +3,7 @@ CREATE DATABASE IF NOT EXISTS project_management;
 USE project_management;
 
 -- Таблица: Users
-CREATE TABLE Users (
+CREATE TABLE IF NOT EXISTS Users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
@@ -15,8 +15,8 @@ CREATE TABLE Users (
 
 CREATE INDEX idx_users_email ON Users(email);
 
--- Таблица: Projects 
-CREATE TABLE Projects (
+-- Таблица: Projects
+CREATE TABLE IF NOT EXISTS Projects (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(150) NOT NULL UNIQUE,
     description TEXT,
@@ -30,7 +30,7 @@ CREATE TABLE Projects (
 CREATE INDEX idx_projects_status ON Projects(status);
 
 -- Таблица: Teams
-CREATE TABLE Teams (
+CREATE TABLE IF NOT EXISTS Teams (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -38,7 +38,7 @@ CREATE TABLE Teams (
 );
 
 -- Таблица: Team_Members
-CREATE TABLE Team_Members (
+CREATE TABLE IF NOT EXISTS Team_Members (
     id INT AUTO_INCREMENT PRIMARY KEY,
     team_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE Team_Members (
 );
 
 -- Таблица: Tasks
-CREATE TABLE Tasks (
+CREATE TABLE IF NOT EXISTS Tasks (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     description TEXT,
@@ -72,7 +72,7 @@ CREATE INDEX idx_tasks_status ON Tasks(status);
 CREATE INDEX idx_tasks_priority ON Tasks(priority);
 
 -- Таблица: Notifications
-CREATE TABLE Notifications (
+CREATE TABLE IF NOT EXISTS Notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     content TEXT NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE Notifications (
 );
 
 -- Таблица: Activity_Log
-CREATE TABLE Activity_Log (
+CREATE TABLE IF NOT EXISTS Activity_Log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     action TEXT NOT NULL,
@@ -93,13 +93,13 @@ CREATE TABLE Activity_Log (
 
 CREATE INDEX idx_activity_user ON Activity_Log(user_id);
 
-CREATE TABLE sessions (
+-- Таблица сессий
+CREATE TABLE IF NOT EXISTS Sessions (
   id VARCHAR(255) PRIMARY KEY,
   user_id INT NOT NULL,
   expires DATETIME NOT NULL,
   FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 );
-
 
 -- Хранимая процедура для отчета по проекту
 DELIMITER //
@@ -113,7 +113,7 @@ BEGIN
         COUNT(tm.id) AS total_team_members
     FROM Projects p
     LEFT JOIN Tasks t ON p.id = t.project_id
-    LEFT JOIN Team_Members tm ON tm.team_id = (SELECT id FROM Teams WHERE project_id = p.id LIMIT 1)
+    LEFT JOIN Team_Members tm ON tm.team_id IN (SELECT id FROM Teams WHERE project_id = p.id)
     WHERE p.id = p_project_id
     GROUP BY p.id;
 END //

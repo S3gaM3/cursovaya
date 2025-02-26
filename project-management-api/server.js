@@ -31,6 +31,7 @@ const db = mysql.createPool({
     process.exit(1);
   }
 })();
+console.log("🔍 JWT_SECRET:", process.env.JWT_SECRET);
 
 // Middleware
 app.use(express.json());
@@ -69,5 +70,6 @@ app.get("/", (req, res) => {
 // Запуск сервера
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Сервер запущен на порту ${PORT}`));
+
 
 module.exports = app;

@@ -14,30 +14,48 @@ import { signIn } from "next-auth/react";
 
 import CustomTextField from "@/app/(DashboardLayout)/components/forms/theme-elements/CustomTextField";
 
-interface loginType {
+interface LoginProps {
   title?: string;
   subtitle?: JSX.Element | JSX.Element[];
   subtext?: JSX.Element | JSX.Element[];
 }
-const router = useRouter();
 
-const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+const AuthLogin: React.FC<LoginProps> = ({ title, subtitle, subtext }) => {
+  const router = useRouter();
+  const [email, setEmail] = useState<string>(""); // Указан тип `string`
+  const [password, setPassword] = useState<string>(""); // Указан тип `string`
+  const [error, setError] = useState<string>(""); // Указан тип `string`
 
-  const handleSubmit = async (e: React.FormEvent) => {  // Типизировано как React.FormEvent
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => { // ✅ Явное указание типа
     e.preventDefault();
-    const result = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
+    setError("");
 
-    if (result?.error) {
-      setError(result.error);
-    } else {
-      window.location.href = "/";  // Перенаправление после успешного входа
+    console.log("🔍 Попытка входа:", { email, password });
+
+    try {
+      // 🔹 Отправляем запрос на сервер
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // ✅ Добавлено
+        body: JSON.stringify({ email, password }),
+      });
+      
+
+      const data = await res.json();
+      console.log("🟢 Ответ сервера:", data);
+
+      if (res.ok && data.token) {
+        localStorage.setItem("token", data.token); // ✅ Сохранение токена
+        console.log("✅ Токен сохранен:", localStorage.getItem("token"));
+
+        router.push("/"); // ✅ Перенаправление
+      } else {
+        setError(data.message || "Ошибка входа");
+      }
+    } catch (err) {
+      console.error("❌ Ошибка авторизации:", err);
+      setError("Ошибка соединения с сервером");
     }
   };
 
@@ -51,7 +69,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
 
       {subtext}
 
-      <Stack>
+      <Stack component="form" onSubmit={handleSubmit}>
         <Box>
           <Typography
             variant="subtitle1"
@@ -66,7 +84,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             variant="outlined"
             fullWidth
             value={email}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}  // Типизировано как React.ChangeEvent<HTMLInputElement>
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} // ✅ Явный тип
           />
         </Box>
         <Box mt="25px">
@@ -84,18 +102,13 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             variant="outlined"
             fullWidth
             value={password}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}  // Типизировано как React.ChangeEvent<HTMLInputElement>
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} // ✅ Явный тип
           />
         </Box>
 
         {error && <Typography color="error">{error}</Typography>}
 
-        <Stack
-          justifyContent="space-between"
-          direction="row"
-          alignItems="center"
-          my={2}
-        >
+        <Stack justifyContent="space-between" direction="row" alignItems="center" my={2}>
           <FormGroup>
             <FormControlLabel
               control={<Checkbox defaultChecked />}
@@ -114,18 +127,20 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             Forgot Password?
           </Typography>
         </Stack>
+
+        <Box>
+          <Button
+            color="primary"
+            variant="contained"
+            size="large"
+            fullWidth
+            type="submit"
+          >
+            Sign In
+          </Button>
+        </Box>
       </Stack>
-      <Box>
-        <Button
-          color="primary"
-          variant="contained"
-          size="large"
-          fullWidth
-          onClick={handleSubmit}
-        >
-          Sign In
-        </Button>
-      </Box>
+
       {subtitle}
     </>
   );

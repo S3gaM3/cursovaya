@@ -1,18 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const tasksController = require("../controllers/tasksController");
-const verifyToken = require("../middleware/authMiddleware");
 
 // Проверяем, что контроллер загружен
 if (!tasksController) {
   throw new Error("❌ Ошибка: tasksController не загружен!");
 }
+if (!tasksController.getTasks) {
+  throw new Error("❌ Ошибка: tasksController.getTasks не найден!");
+}
 
-// CRUD маршруты
-router.get("/", verifyToken, tasksController.getTasks);
-router.get("/:id", verifyToken, tasksController.getTaskById);
-router.post("/", verifyToken, tasksController.createTask);
-router.put("/:id", verifyToken, tasksController.updateTask);
-router.delete("/:id", verifyToken, tasksController.deleteTask);
+// CRUD маршруты (убрана проверка токена для GET-запросов)
+router.get("/", tasksController.getTasks);
+router.get("/:id", tasksController.getTaskById);
+router.post("/", tasksController.createTask);
+router.put("/:id", tasksController.updateTask);
+router.delete("/:id", tasksController.deleteTask);
 
 module.exports = router;
