@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        input, button { margin: 5px; padding: 10px; }
+        .container { max-width: 500px; margin: auto; }
+        .response { white-space: pre-wrap; background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Регистрация</h2>
+        <input type="text" id="registerName" placeholder="Имя"><br>
+        <input type="email" id="registerEmail" placeholder="Email"><br>
+        <input type="password" id="registerPassword" placeholder="Пароль"><br>
+        <button onclick="register()">Зарегистрироваться</button>
+
+        <h2>Авторизация</h2>
+        <input type="email" id="loginEmail" placeholder="Email"><br>
+        <input type="password" id="loginPassword" placeholder="Пароль"><br>
+        <button onclick="login()">Войти</button>
+
+        <h2>Добавить уведомление</h2>
+        <input type="number" id="userId" placeholder="User ID"><br>
+        <input type="text" id="content" placeholder="Текст уведомления"><br>
+        <select id="type">
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+        </select><br>
+        <button onclick="addNotification()">Добавить</button>
+
+        <h2>Просмотреть уведомления</h2>
+        <button onclick="getNotifications()">Показать все</button>
+
+        <h3>Ответ сервера:</h3>
+        <pre class="response" id="response"></pre>
+    </div>
+
+    <script>
+        const apiBase = "http://localhost:5000/api";  // Измени, если сервер на другом порту
+        let token = "";
+
+        async function register() {
+            const res = await fetch(`${apiBase}/auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: document.getElementById("registerName").value,
+                    email: document.getElementById("registerEmail").value,
+                    password: document.getElementById("registerPassword").value
+                })
+            });
+            showResponse(await res.json());
+        }
+
+        async function login() {
+            const res = await fetch(`${apiBase}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: document.getElementById("loginEmail").value,
+                    password: document.getElementById("loginPassword").value
+                })
+            });
+            const data = await res.json();
+            if (res.ok) token = data.token;
+            showResponse(data);
+        }
+
+        async function addNotification() {
+            if (!token) return alert("Сначала авторизуйтесь!");
+            const res = await fetch(`${apiBase}/notifications`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    user_id: document.getElementById("userId").value,
+                    content: document.getElementById("content").value,
+                    type: document.getElementById("type").value
+                })
+            });
+            showResponse(await res.json());
+        }
+
+        async function getNotifications() {
+            if (!token) return alert("Сначала авторизуйтесь!");
+            const res = await fetch(`${apiBase}/notifications`, {
+                method: "GET",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            showResponse(await res.json());
+        }
+
+        function showResponse(data) {
+            document.getElementById("response").textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+
+</body>
+</html>
